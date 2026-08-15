@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>일기 작성/수정</title>
+    <!-- 💡 Pico CSS CDN 링크 한 줄로 기본 디자인 완료 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <header>
+        <h2 th:text="${diary != null ? '✏️ 일기 수정하기' : '✍️ 새 일기 작성하기'}">✍️ 새 일기 작성하기</h2>
+    </header>
+
+    <!--
+      💡 [핵심] Controller의 addDiary(@ModelAttribute DiaryRequestDto ...)와 연결되는 폼!
+      th:action -> 새로 작성할 땐 POST /diaries 로 전송
+    -->
+    <form th:action="${diary != null} ? @{/diaries/{id}/edit(id=${diary.id})} : @{/diaries}"
+          th:method="${diary != null} ? 'put' : 'post'">
+
+        <!-- 1. 일기 제목 ({Title}) - 와이어프레임 반영 -->
+        <label for="title">
+            <strong>제목</strong>
+            <input type="text"
+                   id="title"
+                   name="title"
+                   th:value="${diary?.title}"
+                   placeholder="오늘 일기의 제목을 적어주세요"
+                   required>
+        </label>
+
+        <!-- 2. 오늘의 기분 (MVP 도메인 특성 반영 - 선택 가능) -->
+        <label for="mood">
+            <strong>오늘의 기분</strong>
+            <select id="mood" name="mood">
+                <option value="HAPPY" th:selected="${diary?.mood == 'HAPPY'}">😄 행복함 (HAPPY)</option>
+                <option value="GOOD" th:selected="${diary?.mood == 'GOOD'}">🙂 좋음 (GOOD)</option>
+                <option value="TIRED" th:selected="${diary?.mood == 'TIRED'}">🥱 피곤함 (TIRED)</option>
+                <option value="SAD" th:selected="${diary?.mood == 'SAD'}">😢 슬픔 (SAD)</option>
+            </select>
+        </label>
+
+        <!-- 3. 일기 본문 (Body) - 와이어프레임 반영 -->
+        <label for="content">
+            <strong>본문</strong>
+            <textarea id="content"
+                      name="content"
+                      rows="8"
+                      th:text="${diary?.content}"
+                      placeholder="오늘 하루는 어땠나요? 자유롭게 적어보세요."
+                      required></textarea>
+        </label>
+
+        <!-- 4. 와이어프레임의 [저장] 및 [취소] 버튼 동선 -->
+        <div class="grid">
+            <!-- 목록으로 돌아가는 취소 버튼 -->
+            <a th:href="@{/diaries}" role="button" class="secondary outline">취소</a>
+            <!-- 서버(Controller)로 POST 전송하는 저장 버튼 -->
+            <button type="submit">저장</button>
+        </div>
+
+    </form>
+</main>
+</body>
+</html>

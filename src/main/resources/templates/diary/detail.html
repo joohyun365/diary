@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${diary.title}">일기 상세 보기</title>
+    <!-- 💡 Pico CSS CDN 링크 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        /* 와이어프레임의 'Body' 상자 느낌을 내기 위한 본문 박스 여백 설정 */
+        .diary-body {
+            min-height: 200px;
+            padding: 1.5rem;
+            background-color: var(--pico-card-background-color);
+            border-radius: var(--pico-border-radius);
+            white-space: pre-wrap; /* 줄바꿈(엔터)이 화면에 그대로 표시되도록 설정 */
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+
+    <!-- 1. 일기 제목과 기분 ({Title}, {Mood}) -->
+    <hgroup>
+        <h1 th:text="${diary.title}">일기 제목 예시</h1>
+        <p>오늘의 기분: <strong th:text="${diary.mood}">HAPPY</strong></p>
+    </hgroup>
+
+    <!-- 2. 일기 본문 (Body) - 와이어프레임 중앙 큰 상자 -->
+    <article class="diary-body" th:text="${diary.content}">
+        오늘 하루는 정말 알차고 즐거웠다! (본문 내용 예시)
+    </article>
+
+    <!-- 3. 와이어프레임의 하단/우측 이동 버튼들 [목록으로 / 수정 / 삭제] -->
+    <div class="grid">
+        <!-- 목록으로 돌아가기 -->
+        <a th:href="@{/diaries}" role="button" class="secondary outline">⬅️ 목록으로</a>
+
+        <!-- 글 수정 폼(form.html)으로 이동하기 -->
+        <a th:href="@{/diaries/{id}/edit(id=${diary.id})}" role="button" class="outline">✏️ 글 수정</a>
+
+        <!-- 글 삭제하기 (실무 Form POST 방식) -->
+        <form th:action="@{/diaries/{id}/delete(id=${diary.id})}" th:method="delete" style="margin: 0;">
+            <button type="submit"
+                    class="contrast"
+                    onclick="return confirm('정말 이 일기를 삭제하시겠습니까?');">🗑️ 삭제</button>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>

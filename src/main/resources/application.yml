@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    # 1. 파일 모드(재시작해도 데이터 유지): ~/test 디렉토리에 diary.mv.db 파일 생성됨
+    # (초기 개발 시에는 jdbc:h2:mem:testdb 처럼 인메모리 모드를 써도 됩니다)
+    url: jdbc:h2:file:~/diary;MODE=MySQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+
+  h2:
+    console:
+      enabled: true # 브라우저에서 localhost:8080/h2-console 접속 가능하게 설정
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      # 2. [현업 실무 핵심] 엔티티 클래스를 보고 테이블을 자동 생성/수정
+      ddl-auto: update
+    show-sql: true # 터미널에 JPA가 날리는 SQL문 출력
+    properties:
+      hibernate:
+        format_sql: true

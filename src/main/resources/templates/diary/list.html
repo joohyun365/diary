@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>나의 일기장</title>
+    <!-- 💡 바로 이 한 줄이 Pico CSS 프레임워크 적용 링크입니다! -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <hheader>
+        <h2>📖 나의 일기장 목록</h2>
+    </hheader>
+
+    <!-- 일기 목록 테이블 -->
+    <table>
+        <thead>
+        <tr>
+            <th>번호</th>
+            <th>제목 (클릭하면 상세 보기)</th>
+            <th>기분</th>
+            <th>관리</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- 💡 백엔드 Model에서 넘어온 "diaries" 목록을 반복(th:each)해서 출력 -->
+        <tr th:each="diary : ${diaries}">
+            <td th:text="${diary.id}">1</td>
+
+            <!-- 💡 제목 클릭 시 detail.html(상세보기)로 이동하는 화살표 동선 -->
+            <td>
+                <a th:href="@{/diaries/{id}(id=${diary.id})}" th:text="${diary.title}">일기 제목 예시</a>
+            </td>
+
+            <td th:text="${diary.mood}">HAPPY</td>
+
+            <!-- 💡 수정 페이지로 이동하는 버튼 -->
+            <td>
+                <a th:href="@{/diaries/{id}/edit(id=${diary.id})}" role="button" class="outline">수정</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- 💡 form.html(글쓰기)로 이동하는 버튼 -->
+    <footer>
+        <a th:href="@{/diaries/new}" role="button">✍️ 새 일기 작성</a>
+    </footer>
+</main>
+</body>
+</html>

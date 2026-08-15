@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <!-- 일기장 폼과 동일한 Pico CSS 적용 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+<main class="container">
+    <header>
+        <h2>👋 환영합니다! 회원가입</h2>
+    </header>
+
+    <!-- 💡 Controller의 @PostMapping("/join") 으로 데이터를 보냅니다 -->
+    <form th:action="@{/join}" th:method="post">
+
+        <!-- 1. 이름 (Name) -->
+        <label for="name">
+            <strong>이름</strong>
+            <input type="text"
+                   id="name"
+                   name="name"
+                   placeholder="본명을 입력해주세요"
+                   required>
+        </label>
+
+        <!-- 2. 아이디 (Username) -->
+        <label for="username">
+            <strong>아이디</strong>
+            <input type="text"
+                   id="username"
+                   name="username"
+                   placeholder="로그인에 사용할 아이디를 입력해주세요"
+                   required>
+        </label>
+
+        <!-- 3. 이메일 (Email) -->
+        <label for="email">
+            <strong>이메일</strong>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   placeholder="example@test.com"
+                   required>
+        </label>
+
+        <!-- 4. 비밀번호 (Password) -->
+        <label for="password">
+            <strong>비밀번호</strong>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   placeholder="8자리 이상 입력해주세요"
+                   required>
+        </label>
+
+        <!-- 5. 가입 및 취소 버튼 -->
+        <div class="grid">
+            <a th:href="@{/diaries}" role="button" class="secondary outline">취소</a>
+            <button type="submit">가입하기</button>
+        </div>
+
+    </form>
+</main>
+</body>
+</html>
