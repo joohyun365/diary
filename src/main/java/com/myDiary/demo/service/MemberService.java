@@ -5,8 +5,6 @@ import com.myDiary.demo.dto.MemberResponseDto;
 import com.myDiary.demo.entity.Member;
 import com.myDiary.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -15,15 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class MemberService implements UserDetailsService {
     private final MemberRepository memberRepository;
+    private final DiaryService diaryService;
     private final PasswordEncoder passwordEncoder;
 
     public MemberResponseDto join(MemberRequestDto memberRequestDto) {
@@ -40,6 +35,10 @@ public class MemberService implements UserDetailsService {
     }
 
     public void deleteMember(String username){
+        Member member = memberRepository.findByUsername(username).orElseThrow(
+                ()->new UsernameNotFoundException("no member to delete. Username: " + username)
+        );
+        diaryService.deleteAllImageFilesByMember(member);
         memberRepository.deleteByUsername(username);
     }
 

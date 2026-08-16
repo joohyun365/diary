@@ -8,11 +8,14 @@ import com.myDiary.demo.repository.DiaryRepository;
 
 import com.myDiary.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +29,18 @@ public class DiaryService {
         Member member = memberRepository.findByUsername(username).orElseThrow(
                 ()->new IllegalArgumentException("없는 유저입니다.")
         );
+
+        String savedImagePath = saveImageFile(diaryRequestDto.getImageFile());
+
         Diary diary = Diary.builder()
                 .title(diaryRequestDto.getTitle())
                 .content(diaryRequestDto.getContent())
                 .mood(diaryRequestDto.getMood())
                 .member(member)
+                .imgPath(savedImagePath)
                 .build();
         diaryRepository.save(diary);
+        member.addDiary(diary);
         return new DiaryResponseDto(diary);
     }
 
@@ -44,13 +52,20 @@ public class DiaryService {
     @Transactional
     public DiaryResponseDto updateDiaryById(Long id, DiaryRequestDto diaryRequestDto){
         Diary diary = findById(id);
-        diary.updateDiary(diaryRequestDto.getTitle(), diaryRequestDto.getContent(), diaryRequestDto.getMood());
+        String imgPath=diary.getImgPath();
+        MultipartFile newImageFile=diaryRequestDto.getImageFile();
+        if(newImageFile!=null && !newImageFile.isEmpty()) {
+            deleteImageFile(diary.getImgPath());
+            imgPath = saveImageFile(diaryRequestDto.getImageFile());
+        }
+        diary.updateDiary(diaryRequestDto.getTitle(), diaryRequestDto.getContent(), diaryRequestDto.getMood(), imgPath);
         return new DiaryResponseDto(diary);
     }
 
     @Transactional
     public void deleteDiaryById(Long id){
         Diary diary = findById(id);
+        deleteImageFile(diary.getImgPath());
         diaryRepository.delete(diary);
     }
 
@@ -64,6 +79,44 @@ public class DiaryService {
         return diaryList.stream()
                 .map(diary -> new DiaryResponseDto(diary))
                 .toList();
+    }
+    private String saveImageFile(MultipartFile imageFile){
+        if (imageFile == null || imageFile.isEmpty()) {
+            return null;
+        }
+        // 저장할 컴퓨터의 물리적 폴더 경로 (현재 프로젝트 안의 static/images 폴더)
+        // 실무에서는 C:/diary_images/ 같은 외부 폴더를 쓴다고 한다.
+        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static/images/";
+        // 난수 생성
+        UUID uuid = UUID.randomUUID(); // 유저들이 같은 이름의 사진을 올리면 덮여 쓰이는 것 방지
+        String savedFileName = uuid.toString() + "_" + imageFile.getOriginalFilename();
+
+        // 해당 경로에 빈 파일을 생성하고 그곳에 첨부파일을 덮어쓰기
+        File saveFile = new File(projectPath, savedFileName);
+        try {
+            imageFile.transferTo(saveFile);
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 파일 저장에 실패했습니다.", e);
+        }
+        // DB에 저장할 웹 접근 경로 (브라우저가 이 주소로 접근함)
+        return "/images/" + savedFileName;
+    }
+
+    private void deleteImageFile(String imgPath){
+        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static";
+        File file = new File(projectPath + imgPath);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    public void deleteAllImageFilesByMember(Member member) {
+        List<Diary> diaryList = member.getDiaryList();
+        for (Diary diary : diaryList) {
+            if (diary.getImgPath()!=null) {
+                deleteImageFile(diary.getImgPath());
+            }
+        }
     }
 
 }

@@ -18,22 +18,25 @@ public class Diary {
     @Column(columnDefinition ="TEXT")
     private String content;
     private String mood;
+    private String imgPath;
 
     @ManyToOne
     @JoinColumn(name = "member_id")
     private Member member;
 
     @Builder
-    public Diary(String title, String content, String mood, Member member) {
+    public Diary(String title, String content, String mood, Member member, String imgPath) {
         this.title = title;
         this.content = content;
         this.mood = mood;
         this.member = member;
+        this.imgPath = imgPath;
     }
 
-    public void updateDiary(String title, String content, String mood){
+    public void updateDiary(String title, String content, String mood, String imgPath){
         this.title = title;
         this.content = content;
         this.mood = mood;
+        this.imgPath = imgPath;
     }
 }

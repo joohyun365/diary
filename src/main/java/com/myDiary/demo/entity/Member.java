@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -17,12 +18,14 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(unique = true, nullable = false)
     private String username;
     private String email;
     private String password;
     private String auth;
+
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Diary> diaryList;
+    private List<Diary> diaryList=new ArrayList<>();
 
     @Builder
     public Member(String name, String username, String email, String password, String auth) {
@@ -31,5 +34,9 @@ public class Member {
         this.email = email;
         this.password = password;
         this.auth = auth;
+    }
+
+    public void addDiary(Diary diary) {
+        this.diaryList.add(diary);
     }
 }

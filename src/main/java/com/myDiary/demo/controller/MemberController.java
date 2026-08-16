@@ -31,7 +31,8 @@ public class MemberController {
         return "redirect:/diaries";
     }
 
-    @DeleteMapping("/withdraw")
+//    @DeleteMapping("/withdraw")
+    @GetMapping("/withdraw")
     public String deleteUser(@AuthenticationPrincipal UserDetails userDetails, HttpServletRequest request) {
         memberService.deleteMember(userDetails.getUsername());
         // DB에서 지웠으니 현재 브라우저의 로그인 상태(세션)도 완전히 폭파시킴.

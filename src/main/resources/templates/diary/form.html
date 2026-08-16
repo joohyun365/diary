@@ -13,11 +13,11 @@
     </header>
 
     <!--
-      💡 [핵심] Controller의 addDiary(@ModelAttribute DiaryRequestDto ...)와 연결되는 폼!
-      th:action -> 새로 작성할 땐 POST /diaries 로 전송
+      💡 [핵심] 파일 전송을 위해 enctype="multipart/form-data" 속성이 추가되었습니다.
     -->
     <form th:action="${diary != null} ? @{/diaries/{id}/edit(id=${diary.id})} : @{/diaries}"
-          th:method="${diary != null} ? 'put' : 'post'">
+          th:method="${diary != null} ? 'put' : 'post'"
+          enctype="multipart/form-data">
 
         <!-- 1. 일기 제목 ({Title}) - 와이어프레임 반영 -->
         <label for="title">
@@ -52,7 +52,16 @@
                       required></textarea>
         </label>
 
-        <!-- 4. 와이어프레임의 [저장] 및 [취소] 버튼 동선 -->
+        <!-- 💡 4. 사진 첨부 파일 입력 필드 추가 -->
+        <label for="imageFile">
+            <strong>사진 첨부</strong>
+            <input type="file"
+                   id="imageFile"
+                   name="imageFile"
+                   accept="image/*">
+        </label>
+
+        <!-- 5. 와이어프레임의 [저장] 및 [취소] 버튼 동선 -->
         <div class="grid">
             <!-- 목록으로 돌아가는 취소 버튼 -->
             <a th:href="@{/diaries}" role="button" class="secondary outline">취소</a>
