@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.io.File;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class DiaryServiceTest {
     @Autowired // Spring Boot Test에서는 스프링이 아닌 JUNIT5가 관리하기 떄문에 @RequiredArgsConstructor 작동 안 함
     private DiaryService diaryService;
+    @Autowired
+    private MemberService memberService;
     @Autowired
     private MemberRepository memberRepository;
 
@@ -97,7 +100,7 @@ public class DiaryServiceTest {
         DiaryRequestDto diaryRequestDto = new DiaryRequestDto("to be updated", "will be updated", "SAD", example);
         DiaryRequestDto updatedDiaryRequestDto = new DiaryRequestDto("updated Title", "updated content", "HAPPY", example2);
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
-        DiaryResponseDto updatedResponse = diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto);
+        DiaryResponseDto updatedResponse = diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto, "tester");
         assertThat(diaryService.findById(diaryResponseDto.getId()))
                 .extracting("id", "title", "content", "mood", "imgPath")
                 .containsExactly(diaryResponseDto.getId(), updatedDiaryRequestDto.getTitle(), updatedDiaryRequestDto.getContent(), updatedDiaryRequestDto.getMood(), updatedResponse.getImgPath());
@@ -108,9 +111,51 @@ public class DiaryServiceTest {
         DiaryRequestDto diaryRequestDto = new DiaryRequestDto("new Title", "new content", "TIRED", example);
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
         Diary diary = diaryService.findById(diaryResponseDto.getId());
-        diaryService.deleteDiaryById(diaryResponseDto.getId());
+        diaryService.deleteDiaryById(diaryResponseDto.getId(), "tester");
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,()-> diaryService.findById(diaryResponseDto.getId()));
         assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
     }
 
+    @Test
+    public void checkAuthentication(){
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("to be updated", "will be updated", "SAD", example);
+        DiaryRequestDto updatedDiaryRequestDto = new DiaryRequestDto("updated Title", "updated content", "HAPPY", null);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto, "hacker")
+        );
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
+                () -> diaryService.deleteDiaryById(diaryResponseDto.getId(), "hacker")
+        );
+        assertThat(e.getMessage()).isEqualTo("작성자 본인만 접근할 수 있습니다.");
+        assertThat(e2.getMessage()).isEqualTo("작성자 본인만 접근할 수 있습니다.");
+    }
+
+    @Test
+    public void deleteMemberImages(){
+        MockMultipartFile secondFile = new MockMultipartFile(
+                "imageFile2",
+                "test_image2.jpg",
+                "image2/jpeg",
+                "두 번째 가짜 이미지 데이터입니다".getBytes()
+        );
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("title", "MY content", "HAPPY", example);
+        DiaryRequestDto diaryRequestDto2 = new DiaryRequestDto("YES", "second diary", "SAD", secondFile);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        DiaryResponseDto diaryResponseDto2 = diaryService.joinDiary(diaryRequestDto2, "tester");
+        String imgPath=diaryResponseDto.getImgPath();
+        String imgPath2=diaryResponseDto2.getImgPath();
+        memberService.deleteMember("tester");
+        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static";
+        File file = new File(projectPath + imgPath);
+        File file2 = new File(projectPath + imgPath2);
+        assertThat(file.exists()).isFalse();
+        assertThat(file2.exists()).isFalse();
+        IllegalArgumentException e =assertThrows(IllegalArgumentException.class,
+                ()-> diaryService.findById(diaryResponseDto.getId()));
+        IllegalArgumentException e2 =assertThrows(IllegalArgumentException.class,
+                ()-> diaryService.findById(diaryResponseDto2.getId()));
+        assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
+        assertThat(e2.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto2.getId());
+    }
 }

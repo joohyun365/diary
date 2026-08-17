@@ -41,17 +41,18 @@ public class DiaryController {
         return "redirect:/diaries"; // 저장 완료하고 일기 목록 화면으로 이동
     }
     @PutMapping("/{id}/edit")
-    public String modifyDiary(@PathVariable Long id, @Valid DiaryRequestDto diaryRequestDto, BindingResult bindingResult){
+    public String modifyDiary(@PathVariable Long id, @Valid DiaryRequestDto diaryRequestDto, BindingResult bindingResult,
+                              @AuthenticationPrincipal UserDetails userDetails){
         if (bindingResult.hasErrors()){
             return "diary/form";
         }
-        diaryService.updateDiaryById(id, diaryRequestDto);
+        diaryService.updateDiaryById(id, diaryRequestDto, userDetails.getUsername());
         return "redirect:/diaries/" + id;
     }
 
     @DeleteMapping("/{id}/delete")
-    public String deleteDiary(@PathVariable Long id){
-        diaryService.deleteDiaryById(id);
+    public String deleteDiary(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
+        diaryService.deleteDiaryById(id, userDetails.getUsername());
         return "redirect:/diaries";
     }
 

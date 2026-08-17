@@ -50,8 +50,9 @@ public class DiaryService {
     }
 
     @Transactional
-    public DiaryResponseDto updateDiaryById(Long id, DiaryRequestDto diaryRequestDto){
+    public DiaryResponseDto updateDiaryById(Long id, DiaryRequestDto diaryRequestDto, String currentUsername){
         Diary diary = findById(id);
+        validateAuthor(diary, currentUsername);
         String imgPath=diary.getImgPath();
         MultipartFile newImageFile=diaryRequestDto.getImageFile();
         if(newImageFile!=null && !newImageFile.isEmpty()) {
@@ -63,8 +64,9 @@ public class DiaryService {
     }
 
     @Transactional
-    public void deleteDiaryById(Long id){
+    public void deleteDiaryById(Long id, String currentUsername){
         Diary diary = findById(id);
+        validateAuthor(diary, currentUsername);
         deleteImageFile(diary.getImgPath());
         diaryRepository.delete(diary);
     }
@@ -119,4 +121,9 @@ public class DiaryService {
         }
     }
 
+    private void validateAuthor(Diary diary, String currentUsername) {
+        if (!diary.getMember().getUsername().equals(currentUsername)) {
+            throw new IllegalArgumentException("작성자 본인만 접근할 수 있습니다.");
+        }
+    }
 }
