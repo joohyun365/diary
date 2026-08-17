@@ -8,6 +8,7 @@ import com.myDiary.demo.repository.DiaryRepository;
 
 import com.myDiary.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,8 @@ import java.util.UUID;
 public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
+    @Value("${file.dir}")
+    private String fileDir;
 
     @Transactional
     public DiaryResponseDto joinDiary(DiaryRequestDto diaryRequestDto, String username) { // diary 생성
@@ -86,15 +89,12 @@ public class DiaryService {
         if (imageFile == null || imageFile.isEmpty()) {
             return null;
         }
-        // 저장할 컴퓨터의 물리적 폴더 경로 (현재 프로젝트 안의 static/images 폴더)
-        // 실무에서는 C:/diary_images/ 같은 외부 폴더를 쓴다고 한다.
-        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static/images/";
         // 난수 생성
         UUID uuid = UUID.randomUUID(); // 유저들이 같은 이름의 사진을 올리면 덮여 쓰이는 것 방지
         String savedFileName = uuid.toString() + "_" + imageFile.getOriginalFilename();
 
         // 해당 경로에 빈 파일을 생성하고 그곳에 첨부파일을 덮어쓰기
-        File saveFile = new File(projectPath, savedFileName);
+        File saveFile = new File(fileDir, savedFileName);
         try {
             imageFile.transferTo(saveFile);
         } catch (IOException e) {
@@ -105,8 +105,9 @@ public class DiaryService {
     }
 
     private void deleteImageFile(String imgPath){
-        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static";
-        File file = new File(projectPath + imgPath);
+        if (imgPath==null ||imgPath.isEmpty())return;
+        String fileName = imgPath.replace("/images/","");
+        File file = new File(fileDir + fileName);
         if (file.exists()) {
             file.delete();
         }

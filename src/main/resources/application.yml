@@ -24,3 +24,5 @@ spring:
     properties:
       hibernate:
         format_sql: true
+file:
+  dir: C:/Users/joohy/Desktop/diary_project/diary_images/
