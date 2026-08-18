@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 무분별한 객체 생성 방지 + ID 변조 방지
@@ -23,6 +25,8 @@ public class Diary {
     @ManyToOne
     @JoinColumn(name = "member_id")
     private Member member;
+    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> commentList;
 
     @Builder
     public Diary(String title, String content, String mood, Member member, String imgPath) {
@@ -38,5 +42,8 @@ public class Diary {
         this.content = content;
         this.mood = mood;
         this.imgPath = imgPath;
+    }
+    public void addComment(Comment comment) {
+        this.commentList.add(comment);
     }
 }

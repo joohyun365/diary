@@ -26,6 +26,8 @@ public class Member {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Diary> diaryList=new ArrayList<>();
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> commentList;
 
     @Builder
     public Member(String name, String username, String email, String password, String auth) {
@@ -38,5 +40,8 @@ public class Member {
 
     public void addDiary(Diary diary) {
         this.diaryList.add(diary);
+    }
+    public void addComment(Comment comment) {
+        this.commentList.add(comment);
     }
 }
