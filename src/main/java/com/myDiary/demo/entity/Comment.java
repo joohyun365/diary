@@ -1,5 +1,6 @@
 package com.myDiary.demo.entity;
 
+import com.myDiary.demo.dto.CommentRequestDto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -31,5 +32,8 @@ public class Comment {
         this.content = content;
         this.member = member;
         this.diary = diary;
+    }
+    public void updateComment(String content){
+        this.content= content;
     }
 }
