@@ -45,6 +45,59 @@
     <article class="diary-body" th:text="${diary.content}">
         오늘 하루는 정말 알차고 즐거웠다! (본문 내용 예시)
     </article>
+    <hr>
+    <!-- 💡 1. 에러 메시지 처리 (컨트롤러에서 넘어온 ?error=empty_comment 잡기) -->
+    <div th:if="${param.error}">
+        <p style="color: red; font-weight: bold;">댓글 내용을 입력해주세요!</p>
+    </div>
+
+    <!-- 💡 2. 댓글 작성 폼 -->
+    <div>
+        <h3>댓글 남기기</h3>
+        <!-- th:action으로 주소를 만들고, th:object로 아까 컨트롤러에서 넘긴 빈 껍데기(commentRequestDto)를 받습니다 -->
+        <form th:action="@{|/diaries/${diary.id}/comments|}" th:object="${commentRequestDto}" method="post">
+            <!-- th:field="*{content}" 가 DTO의 content 필드와 이 텍스트박스를 완벽하게 연결해 줍니다 -->
+            <textarea th:field="*{content}" placeholder="댓글을 남겨보세요!" rows="3" cols="50"></textarea>
+            <button type="submit">등록</button>
+        </form>
+    </div>
+
+    <br>
+
+    <!-- 💡 3. 댓글 목록 출력 영역 -->
+    <div>
+        <h3>댓글 목록</h3>
+
+        <!-- 댓글이 하나도 없을 때 보여줄 문구 -->
+        <div th:if="${#lists.isEmpty(comments)}">
+            <p>아직 작성된 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
+        </div>
+
+        <!-- 댓글이 있을 때 반복문(th:each)으로 출력 -->
+        <ul>
+            <li th:each="comment : ${comments}" style="margin-bottom: 10px;">
+
+                <!-- 작성자 아이디와 댓글 내용 -->
+                <strong th:text="${comment.username}">작성자</strong> :
+                <span th:text="${comment.content}">댓글 내용</span>
+
+                <!-- 💡 4. 수정/삭제 버튼 (본인에게만 보이도록 권한 체크!) -->
+                <!-- #authentication.name은 현재 로그인한 사용자의 아이디를 뜻합니다 -->
+                <div th:if="${#authentication.name == comment.username}" style="display: inline-block; margin-left: 10px;">
+
+                    <!-- 삭제 폼 (POST로 보내지만, hidden input으로 DELETE임을 스프링에게 알림) -->
+                    <form th:action="@{|/diaries/${diary.id}/comments/${comment.id}|}" method="post" style="display: inline;">
+                        <input type="hidden" name="_method" value="delete">
+                        <button type="submit">삭제</button>
+                    </form>
+
+                    <!-- (참고) 수정 버튼은 보통 자바스크립트를 이용해 이 자리에 새로운 폼을 띄우는 방식으로 구현합니다 -->
+                    <button type="button" th:onclick="|toggleEditForm(${comment.id})|">수정</button>
+                </div>
+
+            </li>
+        </ul>
+    </div>
 
     <!-- 4. 와이어프레임의 하단/우측 이동 버튼들 [목록으로 / 수정 / 삭제] -->
     <div class="grid">

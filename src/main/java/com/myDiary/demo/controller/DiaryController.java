@@ -1,6 +1,8 @@
 package com.myDiary.demo.controller;
 
+import com.myDiary.demo.dto.CommentRequestDto;
 import com.myDiary.demo.dto.DiaryRequestDto;
+import com.myDiary.demo.service.CommentService;
 import com.myDiary.demo.service.DiaryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/diaries")
 public class DiaryController {
     private final DiaryService diaryService;
+    private final CommentService commentService;
 
     @GetMapping
     public String getDiaryList(Model model) {
@@ -25,6 +28,8 @@ public class DiaryController {
     @GetMapping("/{id}")
     public String getDiaryDetail(@PathVariable Long id, Model model) {
         model.addAttribute("diary", diaryService.getDiaryById(id));
+        model.addAttribute("comments", commentService.findAllOnDiary(id)); // 댓글 목록 넘기기
+        model.addAttribute("commentRequestDto", new CommentRequestDto()); // 새 댓글 작성용 빈 껍대기 넘기기
         return "diary/detail";
     }
     @GetMapping("/new")
