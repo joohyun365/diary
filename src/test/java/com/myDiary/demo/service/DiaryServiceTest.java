@@ -6,6 +6,7 @@ import com.myDiary.demo.entity.Diary;
 import com.myDiary.demo.entity.Member;
 import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.File;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -31,6 +31,8 @@ public class DiaryServiceTest {
     private MemberService memberService;
     @Autowired
     private MemberRepository memberRepository;
+    @Value("${file.dir}")
+    private String fileDir;
 
     private MultipartFile example;
     @BeforeEach
@@ -143,12 +145,11 @@ public class DiaryServiceTest {
         DiaryRequestDto diaryRequestDto2 = new DiaryRequestDto("YES", "second diary", "SAD", secondFile);
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
         DiaryResponseDto diaryResponseDto2 = diaryService.joinDiary(diaryRequestDto2, "tester");
-        String imgPath=diaryResponseDto.getImgPath();
-        String imgPath2=diaryResponseDto2.getImgPath();
+        String imgPath=diaryResponseDto.getImgPath().replace("/images/","");
+        String imgPath2=diaryResponseDto2.getImgPath().replace("/images/","");
         memberService.deleteMember("tester");
-        String projectPath=System.getProperty("user.dir")+"/src/main/resources/static";
-        File file = new File(projectPath + imgPath);
-        File file2 = new File(projectPath + imgPath2);
+        File file = new File(fileDir + imgPath);
+        File file2 = new File(fileDir + imgPath2);
         assertThat(file.exists()).isFalse();
         assertThat(file2.exists()).isFalse();
         IllegalArgumentException e =assertThrows(IllegalArgumentException.class,

@@ -23,7 +23,7 @@ public class CommentService {
     private final DiaryService diaryService;
 
     @Transactional
-    public CommentResponseDto join(CommentRequestDto commentRequestDto, Long diaryId, String currentUsername) {
+    public CommentResponseDto joinComment(CommentRequestDto commentRequestDto, Long diaryId, String currentUsername) {
         Member member = memberRepository.findByUsername(currentUsername).orElseThrow(
                 () -> new UsernameNotFoundException("존재하지 않는 유저는 댓글을 적을 수 없습니다.")
         );
@@ -36,7 +36,7 @@ public class CommentService {
         commentRepository.save(comment);
         member.addComment(comment);
         diary.addComment(comment);
-        return new CommentResponseDto(comment);
+        return new CommentResponseDto(comment.getId(), member.getUsername(),comment.getContent());
     }
 
     @Transactional
@@ -48,7 +48,7 @@ public class CommentService {
             throw new IllegalArgumentException("본인만 댓글을 수정할 수 있습니다.");
         }
         comment.updateComment(commentRequestDto.getContent());
-        return new CommentResponseDto(comment);
+        return new CommentResponseDto(comment.getId(), currentUsername, comment.getContent());
     }
 
     @Transactional
@@ -66,7 +66,15 @@ public class CommentService {
     public List<CommentResponseDto> findAllOnDiary(Long diaryId){
         List<Comment> commentList = commentRepository.findAllByDiaryId(diaryId);
         return commentList.stream()
-                .map(comment->new CommentResponseDto(comment))
+                .map(comment->new CommentResponseDto(comment.getId(),
+                        comment.getMember().getUsername(),
+                        comment.getContent()))
                 .toList();
+    }
+    public Comment findById(Long id){
+        Comment comment= commentRepository.findById(id).orElseThrow(
+                ()->new IllegalArgumentException("찾고 있는 댓글이 없습니다.")
+        );
+        return comment;
     }
 }

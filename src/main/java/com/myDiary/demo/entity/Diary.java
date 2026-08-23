@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -26,7 +27,7 @@ public class Diary {
     @JoinColumn(name = "member_id")
     private Member member;
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comment> commentList;
+    private List<Comment> commentList=new ArrayList<>();
 
     @Builder
     public Diary(String title, String content, String mood, Member member, String imgPath) {

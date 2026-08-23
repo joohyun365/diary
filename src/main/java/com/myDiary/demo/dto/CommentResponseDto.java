@@ -5,9 +5,13 @@ import lombok.Getter;
 
 @Getter
 public class CommentResponseDto {
+    private Long id;
+    private String username;
     private String content;
 
-    public CommentResponseDto(Comment comment) {
-        this.content = comment.getContent();
+    public CommentResponseDto(Long id, String username, String content) {
+        this.id = id;
+        this.username = username;
+        this.content = content;
     }
 }

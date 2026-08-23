@@ -9,14 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class CommentRequestDto {
-    private Long id;
-    private String username;
     @NotBlank(message = "내용을 적으세요")
     private String content;
 
-    public CommentRequestDto(Long id, String username, String content) {
-        this.id = id;
-        this.username = username;
+    public CommentRequestDto(String content) {
         this.content = content;
     }
 }
