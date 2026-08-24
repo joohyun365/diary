@@ -2,6 +2,7 @@ package com.myDiary.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,7 +19,9 @@ public class SecurityConfig {
                 // 1. URL별 접근 권한 설정 (인가)
                 .authorizeHttpRequests(auth -> auth
                         // css, js 같은 정적 파일과 목록 조회, 로그인, 회원가입은 아무나 접근 가능
-                        .requestMatchers("/", "/diaries", "/join", "/login", "/css/**", "/error").permitAll()
+                        // 메서드 단위로 허용
+                        .requestMatchers(HttpMethod.POST,"/api/members").permitAll()
+                        .requestMatchers("/", "/diaries", "/login", "/css/**", "/error").permitAll()
                         // 그 외의 주소(글 작성, 수정, 삭제)는 무조건 로그인(인증)을 해야만 접근 가능
                         .anyRequest().authenticated()
                 )

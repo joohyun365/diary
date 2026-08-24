@@ -36,7 +36,7 @@ public class MemberService implements UserDetailsService {
 
     public void deleteMember(String username){
         Member member = memberRepository.findByUsername(username).orElseThrow(
-                ()->new UsernameNotFoundException("no member to delete. Username: " + username)
+                ()->new IllegalArgumentException("no member to delete. Username: " + username)
         );
         diaryService.deleteAllImageFilesByMember(member);
         memberRepository.deleteByUsername(username);

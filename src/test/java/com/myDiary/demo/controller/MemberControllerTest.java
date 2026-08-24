@@ -13,24 +13,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.BindingResult;
 import tools.jackson.databind.ObjectMapper;
 
-
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @WebMvcTest(MemberController.class) // 타겟 지정
@@ -44,7 +52,6 @@ public class MemberControllerTest {
     private MemberService memberService;
 
     @Test
-    @WithMockUser // 인증된 가짜 유저를 시큐리티 컨텍스트에 주입
     @DisplayName("회원가입 API - 올바른 데이터를 보내면 201 Created와 생성된 유저 정보를 반환한다")
     void join_success() throws Exception{
         MemberRequestDto requestDto = new MemberRequestDto(
@@ -78,6 +85,23 @@ public class MemberControllerTest {
     }
 
     @Test
+    @DisplayName("회원가입 API - username 비워서 보내면 400 Bad Request 반환")
+    void join_fail() throws Exception{
+        MemberRequestDto requestDto = new MemberRequestDto(
+                "name",
+                "",
+                "test@test.com",
+                "12345678",
+                "ROLE_USER");
+        mockMvc.perform(post("/api/members")
+                        .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestDto)))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
 //    @WithMockUser(username="testUser123") // 여기에 적힌 이름이 컨트롤러의 @AuthenticationPrincipal로 들어감-> 스프링 세큐리티 문제로 잠시 주석
     @DisplayName("회원 탈퇴 API - 로그인된 유저가 탈퇴를 요청하면 200 OK를 반환한다")
     void delete_success() throws Exception{
@@ -87,5 +111,35 @@ public class MemberControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk());
         verify(memberService).deleteMember("testUser123"); // deleteMember가 호출 됐는 지 확인
+    }
+    @Test
+//    @WithMockUser(username = "ghostUser") // 인증된 가짜 유저를 시큐리티 컨텍스트에 주입
+    @DisplayName("회원 탈퇴 API - 없는 멤버 삭제하면 IllegalArgumentException 터짐 ")
+    void delete_fail_no_user() throws Exception{
+        // given
+        String ghostUsername = "ghostUser";
+        String expectedErrorMessage = "no member to delete. Username: " + ghostUsername;
+        doThrow(new IllegalArgumentException(expectedErrorMessage))
+                .when(memberService).deleteMember(ghostUsername);
+        // when & then
+        assertThatThrownBy(() ->
+                mockMvc.perform(delete("/api/members")
+                        .with(csrf())
+                        .with(user(ghostUsername).roles("USER")))
+        )
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedErrorMessage);
+    }
+    @Test
+    @DisplayName("회원 탈퇴 API - 인증 없이(로그인 안 하고) 접근하면 302 반환")
+    void delete_fail_no_session() throws Exception {
+        // 유저 세팅을 안 함 (비로그인 사용자)
+        mockMvc.perform(delete("/api/members")
+                        .with(csrf())) // user 없이 보냄
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+//                .andExpect(redirectedUrlPattern("**/login"))
+                // 스프링 내부의 AntPathMatcher가 깐깐해서 http://localhost 같은 프로토콜이 붙으면 패턴 해석을 못 함->
+                .andExpect(redirectedUrl("/login")); // 완전 일치하게 바꿈
     }
 }
