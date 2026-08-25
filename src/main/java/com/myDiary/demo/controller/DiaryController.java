@@ -1,11 +1,15 @@
 package com.myDiary.demo.controller;
 
 import com.myDiary.demo.dto.CommentRequestDto;
+import com.myDiary.demo.dto.CommentResponseDto;
 import com.myDiary.demo.dto.DiaryRequestDto;
+import com.myDiary.demo.dto.DiaryResponseDto;
 import com.myDiary.demo.service.CommentService;
 import com.myDiary.demo.service.DiaryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -13,57 +17,39 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.List;
+
+@RestController
 @RequiredArgsConstructor // final 붙은 필드 생성자 자동 생성
-@RequestMapping("/diaries")
+@RequestMapping("/api/diaries")
 public class DiaryController {
     private final DiaryService diaryService;
     private final CommentService commentService;
 
     @GetMapping
-    public String getDiaryList(Model model) {
-        model.addAttribute("diaries", diaryService.findAll());
-        return "diary/list";
+    public ResponseEntity<List<DiaryResponseDto>> getDiaryList() {
+        return ResponseEntity.status(HttpStatus.OK).body(diaryService.findAll());
     }
     @GetMapping("/{id}")
-    public String getDiaryDetail(@PathVariable Long id, Model model) {
-        model.addAttribute("diary", diaryService.getDiaryById(id));
-        model.addAttribute("comments", commentService.findAllOnDiary(id)); // 댓글 목록 넘기기
-        model.addAttribute("commentRequestDto", new CommentRequestDto()); // 새 댓글 작성용 빈 껍대기 넘기기
-        return "diary/detail";
+    public ResponseEntity<DiaryResponseDto> getDiaryDetail(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(diaryService.getDiaryById(id));
     }
-    @GetMapping("/new")
-    public String getNewDiary() {
-        return "diary/form";
-    }
-    @PostMapping
-    public String addDiary(@Valid @ModelAttribute DiaryRequestDto diaryRequestDto, BindingResult bindingResult,
+    @PostMapping // 바이너리 데이터(이미지 파일)보낼 때 폼 데이터 형식으로 보내야 하므로 @RequestBody 빼고 @ModelAttribute로
+    public ResponseEntity<DiaryResponseDto> addDiary(@Valid @ModelAttribute DiaryRequestDto diaryRequestDto,
                            @AuthenticationPrincipal UserDetails userDetails){
-        if (bindingResult.hasErrors()) {
-            return "diary/form";
-        }
-        diaryService.joinDiary(diaryRequestDto, userDetails.getUsername());
-        return "redirect:/diaries"; // 저장 완료하고 일기 목록 화면으로 이동
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(diaryResponseDto);
     }
-    @PutMapping("/{id}/edit")
-    public String modifyDiary(@PathVariable Long id, @Valid DiaryRequestDto diaryRequestDto, BindingResult bindingResult,
+    @PutMapping("/{id}")
+    public ResponseEntity<DiaryResponseDto> modifyDiary(@PathVariable Long id, @Valid @ModelAttribute DiaryRequestDto diaryRequestDto,
                               @AuthenticationPrincipal UserDetails userDetails){
-        if (bindingResult.hasErrors()){
-            return "diary/form";
-        }
-        diaryService.updateDiaryById(id, diaryRequestDto, userDetails.getUsername());
-        return "redirect:/diaries/" + id;
+        DiaryResponseDto diaryResponseDto = diaryService.updateDiaryById(id, diaryRequestDto, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body(diaryResponseDto);
     }
 
-    @DeleteMapping("/{id}/delete")
-    public String deleteDiary(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDiary(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails){
         diaryService.deleteDiaryById(id, userDetails.getUsername());
-        return "redirect:/diaries";
-    }
-
-    @GetMapping("/{id}/edit")
-    public String goToModifyDiary(@PathVariable Long id, Model model) {
-        model.addAttribute("diary", diaryService.getDiaryById(id));
-        return "diary/form";
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
