@@ -24,7 +24,6 @@ import java.util.List;
 @RequestMapping("/api/diaries")
 public class DiaryController {
     private final DiaryService diaryService;
-    private final CommentService commentService;
 
     @GetMapping
     public ResponseEntity<List<DiaryResponseDto>> getDiaryList() {
