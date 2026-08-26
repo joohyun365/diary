@@ -21,16 +21,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
- import static org.mockito.Mockito.doThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
@@ -43,10 +42,12 @@ public class MemberControllerTest {
     private ObjectMapper objectMapper; // 객체를 JSON으로, 반대로도 변환해주는 잭슨 라이브러리
     @MockitoBean
     private MemberService memberService;
-
+@Nested
+@DisplayName("회원 가입 API")
+class joinMember{
     @Test
-    @DisplayName("회원가입 API - 올바른 데이터를 보내면 201 Created와 생성된 유저 정보를 반환한다")
-    void join_success() throws Exception{
+    @DisplayName("성공 - 올바른 데이터를 보내면 201 Created와 생성된 유저 정보를 반환한다")
+    void join_success() throws Exception {
         MemberRequestDto requestDto = new MemberRequestDto(
                 "name",
                 "testUsername",
@@ -66,20 +67,20 @@ public class MemberControllerTest {
 
         // 실제 요청 및 검증
         mockMvc.perform(post("/api/members")
-                    .with(csrf()) // 시큐리티가 켜져 있으면 POST 요청 시 CSRF 토큰이 필요함
-                    .contentType(MediaType.APPLICATION_JSON) // JSON 보낸다고 선언
-                    .content(objectMapper.writeValueAsString(requestDto))) // 객체를 JSON 스트링으로 변환해서 바디에 담음
+                        .with(csrf()) // 시큐리티가 켜져 있으면 POST 요청 시 CSRF 토큰이 필요함
+                        .contentType(MediaType.APPLICATION_JSON) // JSON 보낸다고 선언
+                        .content(objectMapper.writeValueAsString(requestDto))) // 객체를 JSON 스트링으로 변환해서 바디에 담음
                 .andDo(print()) // 콘솔에 요청/응답 전문을 이쁘게 출력해줌. 디버깅할 때 필수
                 .andExpect(status().isCreated()) // 상태코드 확인
                 .andExpect(jsonPath("$.username").value(expectedResponse.getUsername()))
                 .andExpect(jsonPath("$.name").value(expectedResponse.getName())) // 추가 검증
                 .andExpect(jsonPath("$.email").value(expectedResponse.getEmail())); // JSON 응답 객체의 특정 필드 검증
-
+        verify(memberService).join(any(MemberRequestDto.class));
     }
 
     @Test
-    @DisplayName("회원가입 API - username 비워서 보내면 400 Bad Request 반환")
-    void join_fail() throws Exception{
+    @DisplayName("실패 - username 비워서 보내면 400 Bad Request 반환")
+    void join_fail() throws Exception {
         MemberRequestDto requestDto = new MemberRequestDto(
                 "name",
                 "",
@@ -88,11 +89,13 @@ public class MemberControllerTest {
                 "ROLE_USER");
         mockMvc.perform(post("/api/members")
                         .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestDto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
+        verify(memberService, never()).join(requestDto);
     }
+}
 
     @Nested // 보기 좋게 묶어서 봄
     @DisplayName("회원 탈퇴 API")
@@ -126,6 +129,7 @@ public class MemberControllerTest {
             )
                     .hasCauseInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining(expectedErrorMessage);
+            verify(memberService).deleteMember(ghostUsername);
         }
 
         @Test
@@ -140,6 +144,7 @@ public class MemberControllerTest {
 //                .andExpect(redirectedUrlPattern("**/login"))
                     // 스프링 내부의 AntPathMatcher가 깐깐해서 http://localhost 같은 프로토콜이 붙으면 패턴 해석을 못 함->
 //                    .andExpect(redirectedUrl("/login")); // 완전 일치하게 바꿈
+            verify(memberService,never()).deleteMember(any());
         }
     }
 }

@@ -27,8 +27,7 @@ import java.util.List;
 import org.springframework.mock.web.MockMultipartFile;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.mockito.ArgumentMatchers.any;
@@ -149,6 +148,8 @@ public class DiaryControllerTest {
                     .andExpect(jsonPath("$.content").value(responseDto.getContent()))
                     .andExpect(jsonPath("$.imgPath").value(responseDto.getImgPath()))
                     .andExpect(jsonPath("$.id").value(responseDto.getId()));
+            verify(diaryService).joinDiary(any(DiaryRequestDto.class),anyString());
+            // Matcher(any()같은 거)와 Raw Value를 섞어 쓰면 InvalidUseOfMatchersException가 뜸
         }
 
         @Test
@@ -160,9 +161,24 @@ public class DiaryControllerTest {
                             .param("title", "")
                             .param("content","newContent")
                             .param("mood","HAPPY")
+                            .with(user("testUser").roles("USER"))
                             .with(csrf()))
                     .andDo(print())
                     .andExpect(status().is4xxClientError());
+            verify(diaryService, never()).joinDiary(any(), anyString());
+        }
+        @Test
+        @DisplayName("실패 - 내용을 비어서 요청 시 400 Bad Request 반환")
+        void fail_no_content() throws Exception{
+            mockMvc.perform(multipart("/api/diaries")
+                            .with(user("testUser").roles("USER"))
+                            .param("title", "myTitle")
+                            .param("content", "")
+                            .param("mood", "HAPPY")
+                            .with(csrf()))
+                    .andDo(print())
+                    .andExpect(status().is4xxClientError());
+            verify(diaryService, never()).joinDiary(any(), anyString());
         }
     }
 
@@ -205,6 +221,7 @@ public class DiaryControllerTest {
                 .andExpect(jsonPath("$.content").value(updatedResponseDto.getContent()))
                 .andExpect(jsonPath("$.imgPath").value(updatedResponseDto.getImgPath()))
                 .andExpect(jsonPath("$.id").value(updatedResponseDto.getId()));
+        verify(diaryService).updateDiaryById(anyLong(), any(DiaryRequestDto.class), anyString());
     }
 
     @Test
