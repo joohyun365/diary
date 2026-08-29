@@ -16,6 +16,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable()) // 잠시 postman 떄문에 비활
                 // 폼 로그인 비활성화
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable()) // 기본 HTTP 창도 비활성화

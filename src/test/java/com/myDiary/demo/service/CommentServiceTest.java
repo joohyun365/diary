@@ -9,14 +9,18 @@ import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
@@ -29,6 +33,8 @@ public class CommentServiceTest {
     private DiaryRepository diaryRepository;
     @Autowired
     private DiaryService diaryService;
+    @MockitoBean
+    private AiService aiService; // 가짜 ai서비스
 
     private MultipartFile example;
     Diary diary;
@@ -48,6 +54,8 @@ public class CommentServiceTest {
                 "image/jpeg",
                 "가짜 이미지 데이터입니다".getBytes()
         );
+        when(aiService.analyzeDiary(anyString())) // 다이어리 서비스 호출 전에 가짜AI가 이 응답하도록
+                .thenReturn(new AiResponseDto("HAPPY","테스트용 가짜 댓글"));
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(new DiaryRequestDto("Today",
                         "testing comment",
                         "SAD",
@@ -65,7 +73,7 @@ public class CommentServiceTest {
 
     @Test
     public void joinCommentTest(){
-        CommentResponseDto commentResponseDto = commentService.joinComment(new CommentRequestDto("Wow so funny"),
+        CommentResponseDto commentResponseDto = commentService.joinComment(new CommentRequestDto("Nice Comment"),
                 diary.getId(),
                 "tester");
         Comment comment=commentService.findById(commentResponseDto.getId());
@@ -73,7 +81,7 @@ public class CommentServiceTest {
         Member member = memberRepository.findByUsername("tester").orElse(null);
         assertThat(comment).
                 extracting("content", "member","diary")
-                .containsExactly("Wow so funny", member, diary);
+                .containsExactly("Nice Comment", member, diary);
     }
     @Test
     public void updateCommentByIdTest(){

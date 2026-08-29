@@ -1,5 +1,6 @@
 package com.myDiary.demo.service;
 
+import com.myDiary.demo.dto.AiResponseDto;
 import com.myDiary.demo.dto.DiaryRequestDto;
 import com.myDiary.demo.dto.DiaryResponseDto;
 import com.myDiary.demo.entity.Diary;
@@ -8,6 +9,7 @@ import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,8 @@ import java.io.File;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Transactional
@@ -31,12 +35,16 @@ public class DiaryServiceTest {
     private MemberService memberService;
     @Autowired
     private MemberRepository memberRepository;
+    @MockitoBean
+    private AiService aiService;
     @Value("${file.dir}")
     private String fileDir;
 
     private MultipartFile example;
     @BeforeEach
     public void setup(){
+        when(aiService.analyzeDiary(anyString()))
+                .thenReturn(new AiResponseDto("HAPPY","테스트용 가짜 댓글"));
         Member member = Member.builder()
                 .name("test")
                 .username("tester")

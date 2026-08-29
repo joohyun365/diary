@@ -1,5 +1,6 @@
 package com.myDiary.demo.service;
 
+import com.myDiary.demo.dto.AiResponseDto;
 import com.myDiary.demo.dto.DiaryRequestDto;
 import com.myDiary.demo.dto.DiaryResponseDto;
 import com.myDiary.demo.entity.Diary;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
+    private  final AiService aiService;
     @Value("${file.dir}")
     private String fileDir;
 
@@ -33,12 +35,14 @@ public class DiaryService {
                 ()->new IllegalArgumentException("없는 유저입니다.")
         );
 
+        AiResponseDto aiResponseDto = aiService.analyzeDiary(diaryRequestDto.getContent());
+
         String savedImagePath = saveImageFile(diaryRequestDto.getImageFile());
 
         Diary diary = Diary.builder()
                 .title(diaryRequestDto.getTitle())
                 .content(diaryRequestDto.getContent())
-                .mood(diaryRequestDto.getMood())
+                .mood(aiResponseDto.analyzedMood()) // AI가 분석한 mood
                 .member(member)
                 .imgPath(savedImagePath)
                 .build();
