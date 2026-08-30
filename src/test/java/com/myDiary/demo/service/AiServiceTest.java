@@ -36,7 +36,7 @@ class AiServiceTest {
        // 실제 서버가 아니라 테스트용으로 가짜 JSON 응답을 반환하도록 설정
        //    AiService.analyzeDiary()는 이 값을 AiResponseDto로 변환해서 돌려줌
        when(responseSpec.body(AiResponseDto.class))
-               .thenReturn(new AiResponseDto("HAPPY", "기분 좋은 하루였겠네요!"));
+               .thenReturn(new AiResponseDto("HAPPY"));
 
        // AiService 생성 시 mock RestClient를 주입한다.
        aiService = new AiService(restClient);
@@ -52,6 +52,5 @@ class AiServiceTest {
 
        assertThat(response).isNotNull();
        assertThat(response.analyzedMood()).isEqualTo("HAPPY");
-       assertThat(response.generatedComment()).isEqualTo("기분 좋은 하루였겠네요!");
     }
 }

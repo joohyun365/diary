@@ -8,6 +8,11 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class AiClientConfig {
     @Bean
+    public RestClient.Builder restClientBuilder() {
+        return RestClient.builder();
+    }
+
+    @Bean
     public RestClient aiRestClient(RestClient.Builder builder,
                                   @Value("${ai.server.url}") String aiServerUrl) {
         return builder.baseUrl(aiServerUrl).build();

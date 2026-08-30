@@ -55,7 +55,7 @@ public class CommentServiceTest {
                 "가짜 이미지 데이터입니다".getBytes()
         );
         when(aiService.analyzeDiary(anyString())) // 다이어리 서비스 호출 전에 가짜AI가 이 응답하도록
-                .thenReturn(new AiResponseDto("HAPPY","테스트용 가짜 댓글"));
+                .thenReturn(new AiResponseDto("HAPPY"));
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(new DiaryRequestDto("Today",
                         "testing comment",
                         "SAD",

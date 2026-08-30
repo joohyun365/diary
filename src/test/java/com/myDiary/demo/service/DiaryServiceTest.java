@@ -44,7 +44,7 @@ public class DiaryServiceTest {
     @BeforeEach
     public void setup(){
         when(aiService.analyzeDiary(anyString()))
-                .thenReturn(new AiResponseDto("HAPPY","테스트용 가짜 댓글"));
+                .thenReturn(new AiResponseDto("HAPPY"));
         Member member = Member.builder()
                 .name("test")
                 .username("tester")
