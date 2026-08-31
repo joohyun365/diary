@@ -58,7 +58,7 @@ public class CommentServiceTest {
                 .thenReturn(new AiResponseDto("HAPPY"));
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(new DiaryRequestDto("Today",
                         "testing comment",
-                        "SAD",
+                        "HAPPY",
                         example),
                 "tester");
         diary=diaryService.findById(diaryResponseDto.getId());

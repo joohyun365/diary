@@ -35,6 +35,7 @@ class AiServiceTest {
 
        // 실제 서버가 아니라 테스트용으로 가짜 JSON 응답을 반환하도록 설정
        //    AiService.analyzeDiary()는 이 값을 AiResponseDto로 변환해서 돌려줌
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec); // 상태 코드 처리 무시
        when(responseSpec.body(AiResponseDto.class))
                .thenReturn(new AiResponseDto("HAPPY"));
 
