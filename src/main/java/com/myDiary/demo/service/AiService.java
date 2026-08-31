@@ -24,18 +24,33 @@ public class AiService {
                     .body(new AiRequestDto(content))
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                        throw new RestClientException("서버 요청 오류: " + res.getStatusCode());
+                        throw new AiExternalServiceException("서버 클라이언트 오류: " + res.getStatusCode(),
+                                null,
+                                AiExternalServiceException.ErrorType.CLIENT_ERROR);
                     })
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                        throw new RestClientException("서버 장애: " + res.getStatusCode());
+                        throw new AiExternalServiceException("서버 내부 장애: " + res.getStatusCode(),
+                                null,
+                                AiExternalServiceException.ErrorType.SERVER_ERROR);
                     })
                     .body(AiResponseDto.class);
-        } catch (ResourceAccessException e) {
-            throw new AiExternalServiceException("AI 서버 응답 시간 초과", e, AiExternalServiceException.ErrorType.CONNECTION_ERROR); // 일단 AiExternalServiceException.ErrorType.TIMEOUT 대신
+        } catch (AiExternalServiceException e) {
+            throw e;
+        }catch (ResourceAccessException e) {
+            throw new AiExternalServiceException("" +
+                    "AI 서버 연결에 실패했습니다.",
+                    e,
+                    AiExternalServiceException.ErrorType.CONNECTION_ERROR);
         } catch (HttpMessageConversionException e) { // JSON 변환 오류 또는 DTO 매핑 실패
-            throw new AiExternalServiceException("AI 서버 응답 형식이 올바르지 않습니다.", e, AiExternalServiceException.ErrorType.RESPONSE_ERROR);
+            throw new AiExternalServiceException(
+                    "AI 서버 응답 형식이 올바르지 않습니다.",
+                    e,
+                    AiExternalServiceException.ErrorType.RESPONSE_ERROR);
         } catch (RestClientException e) {
-            throw new AiExternalServiceException("AI 서버 연결 실패", e, AiExternalServiceException.ErrorType.CONNECTION_ERROR);
+            throw new AiExternalServiceException(
+                    "AI 서버 통신 중 오류가 발생했습니다.",
+                    e,
+                    AiExternalServiceException.ErrorType.CONNECTION_ERROR);
         }
     }
 
