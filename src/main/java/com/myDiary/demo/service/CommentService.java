@@ -36,7 +36,7 @@ public class CommentService {
         commentRepository.save(comment);
         member.addComment(comment);
         diary.addComment(comment);
-        return new CommentResponseDto(comment.getId(), member.getUsername(),comment.getContent());
+        return new CommentResponseDto(comment);
     }
 
     @Transactional
@@ -48,7 +48,7 @@ public class CommentService {
             throw new IllegalArgumentException("본인만 댓글을 수정할 수 있습니다.");
         }
         comment.updateComment(commentRequestDto.getContent());
-        return new CommentResponseDto(comment.getId(), currentUsername, comment.getContent());
+        return new CommentResponseDto(comment);
     }
 
     @Transactional
@@ -66,9 +66,7 @@ public class CommentService {
     public List<CommentResponseDto> findAllOnDiary(Long diaryId){
         List<Comment> commentList = commentRepository.findAllByDiaryId(diaryId);
         return commentList.stream()
-                .map(comment->new CommentResponseDto(comment.getId(),
-                        comment.getMember().getUsername(),
-                        comment.getContent()))
+                .map(comment->new CommentResponseDto(comment))
                 .toList();
     }
     public Comment findById(Long id){

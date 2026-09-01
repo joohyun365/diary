@@ -43,6 +43,7 @@ public class AiService {
                     AiExternalServiceException.ErrorType.CONNECTION_ERROR);
         } catch (HttpMessageConversionException e) { // JSON 변환 오류 또는 DTO 매핑 실패
             throw new AiExternalServiceException(
+
                     "AI 서버 응답 형식이 올바르지 않습니다.",
                     e,
                     AiExternalServiceException.ErrorType.RESPONSE_ERROR);

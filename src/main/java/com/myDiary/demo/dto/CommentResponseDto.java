@@ -9,9 +9,9 @@ public class CommentResponseDto {
     private String username;
     private String content;
 
-    public CommentResponseDto(Long id, String username, String content) {
-        this.id = id;
-        this.username = username;
-        this.content = content;
+    public CommentResponseDto(Comment comment) {
+        this.id = comment.getId();
+        this.username = comment.getMember().getUsername();
+        this.content = comment.getContent();
     }
 }

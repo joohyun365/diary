@@ -106,11 +106,11 @@ class AiServiceTest {
         void fail_invalidResponse(){
             mockServer.expect(requestTo("http://localhost:8000/api/analyze"))
                     .andExpect(method(HttpMethod.POST))
-                    .andRespond(
+                    .andRespond( // 일단 응답에서 에러 뜨게 하기.
                             withSuccess(
                                     """
                                     {
-                                        "wrongField":
+                                        "analyzedMood":
                                     }
                                     """,
                                     MediaType.APPLICATION_JSON
