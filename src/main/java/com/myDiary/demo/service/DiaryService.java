@@ -1,5 +1,6 @@
 package com.myDiary.demo.service;
 
+import java.nio.file.Files;
 import com.myDiary.demo.dto.AiResponseDto;
 import com.myDiary.demo.dto.DiaryRequestDto;
 import com.myDiary.demo.dto.DiaryResponseDto;
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -94,13 +95,26 @@ public class DiaryService {
             return null;
         }
         // 난수 생성
-        UUID uuid = UUID.randomUUID(); // 유저들이 같은 이름의 사진을 올리면 덮여 쓰이는 것 방지
-        String savedFileName = uuid.toString() + "_" + imageFile.getOriginalFilename();
+        // 유저들이 같은 이름의 사진을 올리면 덮여 쓰이는 것 방지
+        String originalFilename = Path.of(imageFile.getOriginalFilename())
+                .getFileName()
+                .toString();
+        String savedFileName = UUID.randomUUID().toString() + "_" + originalFilename;
 
+        Path rootPath = Path.of(fileDir)
+                .toAbsolutePath()
+                .normalize();
+        Path savePath = rootPath // 운영체제에 맞게 안전한 경로 객체로 만듦
+                .resolve(savedFileName) // 뒤에 파일명 붙이기(기준 폴더 + 저장할 파일명)
+                .normalize(); // 불필요한 . .. 정리함.
+
+        if(!savePath.startsWith(rootPath)){ // 이중 확인용
+            throw new IllegalArgumentException("잘못된 파일 경로입니다.");
+        }
         // 해당 경로에 빈 파일을 생성하고 그곳에 첨부파일을 덮어쓰기
-        File saveFile = new File(fileDir, savedFileName);
         try {
-            imageFile.transferTo(saveFile);
+            Files.createDirectories(rootPath); // 부모 경로에 폴더 없으면 만듦
+            imageFile.transferTo(savePath); //MultipartFile 데이터를 savePath에 저장
         } catch (IOException e) {
             throw new RuntimeException("이미지 파일 저장에 실패했습니다.", e);
         }
@@ -110,10 +124,22 @@ public class DiaryService {
 
     private void deleteImageFile(String imgPath){
         if (imgPath==null ||imgPath.isEmpty())return;
-        String fileName = imgPath.replace("/images/","");
-        File file = new File(fileDir + fileName);
-        if (file.exists()) {
-            file.delete();
+        String fileName = Path.of(imgPath)
+                .getFileName()
+                .toString();
+        Path rootPath = Path.of(fileDir)
+                .toAbsolutePath()
+                .normalize();
+        Path imagePath = rootPath
+                .resolve(fileName)
+                .normalize();
+        if(!imagePath.startsWith(rootPath)){ // 이미 파일명만 추출했지만 이중 확인용
+            throw new IllegalArgumentException("잘못된 파일 경로입니다.");
+        }
+        try {
+            Files.deleteIfExists(imagePath);
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 파일 삭제에 실패했습니다", e);
         }
     }
 
