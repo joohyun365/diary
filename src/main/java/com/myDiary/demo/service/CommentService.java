@@ -5,6 +5,8 @@ import com.myDiary.demo.dto.CommentResponseDto;
 import com.myDiary.demo.entity.Comment;
 import com.myDiary.demo.entity.Diary;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ForbiddenException;
+import com.myDiary.demo.exception.ResourceNotFoundException;
 import com.myDiary.demo.repository.CommentRepository;
 import com.myDiary.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,10 +44,10 @@ public class CommentService {
     @Transactional
     public CommentResponseDto updateCommentById(Long commentId, CommentRequestDto commentRequestDto, String currentUsername){
         Comment comment = commentRepository.findById(commentId).orElseThrow(
-                () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
+                () -> new ResourceNotFoundException("존재하지 않는 댓글입니다.")
         );
         if(!comment.getMember().getUsername().equals(currentUsername)){
-            throw new IllegalArgumentException("본인만 댓글을 수정할 수 있습니다.");
+            throw new ForbiddenException("본인만 댓글을 수정할 수 있습니다.");
         }
         comment.updateComment(commentRequestDto.getContent());
         return new CommentResponseDto(comment);
@@ -54,10 +56,10 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId, String currentUsername){
         Comment comment = commentRepository.findById(commentId).orElseThrow(
-                () -> new IllegalArgumentException("존재하지 않는 댓글입니다.")
+                () -> new ResourceNotFoundException("존재하지 않는 댓글입니다.")
         );
         if(!comment.getMember().getUsername().equals(currentUsername)){
-            throw new IllegalArgumentException("본인만 댓글을 삭제할 수 있습니다.");
+            throw new ForbiddenException("본인만 댓글을 삭제할 수 있습니다.");
         }
         commentRepository.deleteById(commentId);
 
@@ -71,7 +73,7 @@ public class CommentService {
     }
     public Comment findById(Long id){
         Comment comment= commentRepository.findById(id).orElseThrow(
-                ()->new IllegalArgumentException("찾고 있는 댓글이 없습니다.")
+                ()->new ResourceNotFoundException("찾고 있는 댓글이 없습니다.")
         );
         return comment;
     }

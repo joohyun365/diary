@@ -5,6 +5,7 @@ import com.myDiary.demo.config.SecurityConfig;
 import com.myDiary.demo.dto.MemberRequestDto;
 import com.myDiary.demo.dto.MemberResponseDto;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ResourceNotFoundException;
 import com.myDiary.demo.service.MemberService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -114,21 +115,21 @@ class joinMember{
 
         @Test
 //    @WithMockUser(username = "ghostUser") // 인증된 가짜 유저를 시큐리티 컨텍스트에 주입
-        @DisplayName("실패 - 없는 멤버 삭제하면 IllegalArgumentException 터짐 ")
+        @DisplayName("실패 - 없는 멤버 삭제하면 404 터짐 ")
         void fail_no_user() throws Exception {
             // given
             String ghostUsername = "ghostUser";
-            String expectedErrorMessage = "no member to delete. Username: " + ghostUsername;
-            doThrow(new IllegalArgumentException(expectedErrorMessage))
+            String expectedErrorMessage = "삭제할 멤버가 없습니다. Username: " + ghostUsername;
+            doThrow(new ResourceNotFoundException(expectedErrorMessage))
                     .when(memberService).deleteMember(ghostUsername);
             // when & then
-            assertThatThrownBy(() ->
-                    mockMvc.perform(delete("/api/members")
+
+            mockMvc.perform(delete("/api/members")
                             .with(csrf())
                             .with(user(ghostUsername).roles("USER")))
-            )
-                    .hasCauseInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining(expectedErrorMessage);
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().string(expectedErrorMessage));
             verify(memberService).deleteMember(ghostUsername);
         }
 

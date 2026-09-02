@@ -6,6 +6,8 @@ import com.myDiary.demo.dto.DiaryRequestDto;
 import com.myDiary.demo.dto.DiaryResponseDto;
 import com.myDiary.demo.entity.Diary;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ForbiddenException;
+import com.myDiary.demo.exception.ResourceNotFoundException;
 import com.myDiary.demo.repository.DiaryRepository;
 
 import com.myDiary.demo.repository.MemberRepository;
@@ -33,7 +35,7 @@ public class DiaryService {
     @Transactional
     public DiaryResponseDto joinDiary(DiaryRequestDto diaryRequestDto, String username) { // diary 생성
         Member member = memberRepository.findByUsername(username).orElseThrow(
-                ()->new IllegalArgumentException("없는 유저입니다.")
+                ()->new ResourceNotFoundException("없는 유저입니다.")
         );
 
         AiResponseDto aiResponseDto = aiService.analyzeDiary(diaryRequestDto.getContent());
@@ -81,7 +83,7 @@ public class DiaryService {
 
     public Diary findById(Long id) {
         return diaryRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("해당 일기가 존재하지 않습니다. id: " + id));
+                .orElseThrow(()->new ResourceNotFoundException("해당 일기가 존재하지 않습니다. id: " + id));
     }
 
     public List<DiaryResponseDto> findAll(){
@@ -154,7 +156,7 @@ public class DiaryService {
 
     private void validateAuthor(Diary diary, String currentUsername) {
         if (!diary.getMember().getUsername().equals(currentUsername)) {
-            throw new IllegalArgumentException("작성자 본인만 접근할 수 있습니다.");
+            throw new ForbiddenException("작성자 본인만 접근할 수 있습니다.");
         }
     }
 }

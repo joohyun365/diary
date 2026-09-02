@@ -5,6 +5,8 @@ import com.myDiary.demo.dto.DiaryRequestDto;
 import com.myDiary.demo.dto.DiaryResponseDto;
 import com.myDiary.demo.entity.Diary;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ForbiddenException;
+import com.myDiary.demo.exception.ResourceNotFoundException;
 import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,7 +124,7 @@ public class DiaryServiceTest {
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
         Diary diary = diaryService.findById(diaryResponseDto.getId());
         diaryService.deleteDiaryById(diaryResponseDto.getId(), "tester");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,()-> diaryService.findById(diaryResponseDto.getId()));
+        ResourceNotFoundException e = assertThrows(ResourceNotFoundException.class,()-> diaryService.findById(diaryResponseDto.getId()));
         assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
     }
 
@@ -131,10 +133,10 @@ public class DiaryServiceTest {
         DiaryRequestDto diaryRequestDto = new DiaryRequestDto("to be updated", "will be updated", "SAD", example);
         DiaryRequestDto updatedDiaryRequestDto = new DiaryRequestDto("updated Title", "updated content", "HAPPY", null);
         DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        ForbiddenException e = assertThrows(ForbiddenException.class,
                 () -> diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto, "hacker")
         );
-        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
+        ForbiddenException e2 = assertThrows(ForbiddenException.class,
                 () -> diaryService.deleteDiaryById(diaryResponseDto.getId(), "hacker")
         );
         assertThat(e.getMessage()).isEqualTo("작성자 본인만 접근할 수 있습니다.");
@@ -160,9 +162,9 @@ public class DiaryServiceTest {
         File file2 = new File(fileDir + imgPath2);
         assertThat(file.exists()).isFalse();
         assertThat(file2.exists()).isFalse();
-        IllegalArgumentException e =assertThrows(IllegalArgumentException.class,
+        ResourceNotFoundException e =assertThrows(ResourceNotFoundException.class,
                 ()-> diaryService.findById(diaryResponseDto.getId()));
-        IllegalArgumentException e2 =assertThrows(IllegalArgumentException.class,
+        ResourceNotFoundException e2 =assertThrows(ResourceNotFoundException.class,
                 ()-> diaryService.findById(diaryResponseDto2.getId()));
         assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
         assertThat(e2.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto2.getId());

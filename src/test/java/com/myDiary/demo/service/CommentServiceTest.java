@@ -4,6 +4,7 @@ import com.myDiary.demo.dto.*;
 import com.myDiary.demo.entity.Comment;
 import com.myDiary.demo.entity.Diary;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ForbiddenException;
 import com.myDiary.demo.repository.DiaryRepository;
 import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -94,7 +95,7 @@ public class CommentServiceTest {
                 "id", "username","content"
         )
                 .containsExactly(updatedResponseDto.getId(),updatedResponseDto.getUsername(), "updated comment");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        ForbiddenException e = assertThrows(ForbiddenException.class,
                 ()->commentService.updateCommentById(originalResponseDto.getId(), wantedCommentRequestDto, "notTester"));
         assertThat(e.getMessage()).isEqualTo("본인만 댓글을 수정할 수 있습니다.");
     }

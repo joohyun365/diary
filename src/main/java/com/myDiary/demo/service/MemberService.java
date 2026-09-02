@@ -3,6 +3,7 @@ package com.myDiary.demo.service;
 import com.myDiary.demo.dto.MemberRequestDto;
 import com.myDiary.demo.dto.MemberResponseDto;
 import com.myDiary.demo.entity.Member;
+import com.myDiary.demo.exception.ResourceNotFoundException;
 import com.myDiary.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
@@ -36,7 +37,7 @@ public class MemberService implements UserDetailsService {
 
     public void deleteMember(String username){
         Member member = memberRepository.findByUsername(username).orElseThrow(
-                ()->new IllegalArgumentException("no member to delete. Username: " + username)
+                ()->new ResourceNotFoundException("삭제할 멤버가 없습니다. Username: " + username)
         );
         diaryService.deleteAllImageFilesByMember(member);
         memberRepository.deleteByUsername(username);
