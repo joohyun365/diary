@@ -1,0 +1,174 @@
+package com.myDiary.doospatch.service;
+
+import com.myDiary.doospatch.dto.AiResponseDto;
+import com.myDiary.doospatch.dto.DiaryRequestDto;
+import com.myDiary.doospatch.dto.DiaryResponseDto;
+import com.myDiary.doospatch.entity.Diary;
+import com.myDiary.doospatch.entity.Member;
+import com.myDiary.doospatch.exception.ForbiddenException;
+import com.myDiary.doospatch.exception.ResourceNotFoundException;
+import com.myDiary.doospatch.repository.MemberRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.multipart.MultipartFile;
+
+
+import java.io.File;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
+public class DiaryServiceTest {
+    @Autowired // Spring Boot Test에서는 스프링이 아닌 JUNIT5가 관리하기 떄문에 @RequiredArgsConstructor 작동 안 함
+    private DiaryService diaryService;
+    @Autowired
+    private MemberService memberService;
+    @Autowired
+    private MemberRepository memberRepository;
+    @MockitoBean
+    private AiService aiService;
+    @Value("${file.dir}")
+    private String fileDir;
+
+    private MultipartFile example;
+    @BeforeEach
+    public void setup(){
+        when(aiService.analyzeDiary(anyString()))
+                .thenReturn(new AiResponseDto("HAPPY"));
+        Member member = Member.builder()
+                .name("test")
+                .username("tester")
+                .email("testing@test.com")
+                .password("12345678")
+                .auth("ROLE_USER")
+                .build();
+        memberRepository.save(member);
+        example = new MockMultipartFile(
+                "imageFile",
+                "test_image.jpg",
+                "image/jpeg",
+                "가짜 이미지 데이터입니다".getBytes()
+        );
+    }
+    @AfterEach
+    public void deleteCreatedImg(){
+        Member member = memberRepository.findByUsername("tester").orElse(null);
+        if (member!=null) {
+            diaryService.deleteAllImageFilesByMember(member);
+        }
+    }
+
+    @Test
+    public void joinDiaryTest(){
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("new title", "some content", "HAPPY", example);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        Diary diary = diaryService.findById(diaryResponseDto.getId());
+        assertThat(diary.getTitle()).isEqualTo("new title");
+        assertThat(diary.getContent()).isEqualTo("some content");
+        assertThat(diary.getMood()).isEqualTo("HAPPY");
+        assertThat(diary.getMember().getUsername()).isEqualTo("tester");
+        assertThat(diary.getImgPath()).isEqualTo(diaryResponseDto.getImgPath());
+        /*
+        * assertThat(diary)
+        .extracting("title", "content", "mood")
+        .containsExactly("new title", "some content", "happy");
+        * */
+    }
+
+    @Test
+    public void readDiaryTest(){
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("Title1", "Today I..", "TIRED", example);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        Diary diary = diaryService.findById(diaryResponseDto.getId());
+        assertAll("일기 읽기 검증",
+                ()->assertThat(diary.getId()).isEqualTo(diaryResponseDto.getId()),
+                ()->assertThat(diary.getTitle()).isEqualTo(diaryResponseDto.getTitle()),
+                ()->assertThat(diary.getContent()).isEqualTo(diaryResponseDto.getContent()),
+                ()->assertThat(diary.getMood()).isEqualTo(diaryResponseDto.getMood()),
+                ()->assertThat(diary.getMember().getUsername()).isEqualTo("tester"),
+                ()->assertThat(diary.getImgPath()).isEqualTo(diaryResponseDto.getImgPath())
+        );
+    }
+    @Test
+    public void updateDiaryTest(){
+        MultipartFile example2 = new MockMultipartFile(
+                "imageFile2",
+                "test_image2.jpg",
+                "image2/jpeg",
+                "두 번째 가짜 이미지 데이터입니다".getBytes()
+        );
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("to be updated", "will be updated", "SAD", example);
+        DiaryRequestDto updatedDiaryRequestDto = new DiaryRequestDto("updated Title", "updated content", "HAPPY", example2);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        DiaryResponseDto updatedResponse = diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto, "tester");
+        assertThat(diaryService.findById(diaryResponseDto.getId()))
+                .extracting("id", "title", "content", "mood", "imgPath")
+                .containsExactly(diaryResponseDto.getId(), updatedDiaryRequestDto.getTitle(), updatedDiaryRequestDto.getContent(), updatedDiaryRequestDto.getMood(), updatedResponse.getImgPath());
+    }
+
+    @Test
+    public void deleteDiaryTest(){
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("new Title", "new content", "TIRED", example);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        Diary diary = diaryService.findById(diaryResponseDto.getId());
+        diaryService.deleteDiaryById(diaryResponseDto.getId(), "tester");
+        ResourceNotFoundException e = assertThrows(ResourceNotFoundException.class,()-> diaryService.findById(diaryResponseDto.getId()));
+        assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
+    }
+
+    @Test
+    public void checkAuthentication(){
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("to be updated", "will be updated", "SAD", example);
+        DiaryRequestDto updatedDiaryRequestDto = new DiaryRequestDto("updated Title", "updated content", "HAPPY", null);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        ForbiddenException e = assertThrows(ForbiddenException.class,
+                () -> diaryService.updateDiaryById(diaryResponseDto.getId(), updatedDiaryRequestDto, "hacker")
+        );
+        ForbiddenException e2 = assertThrows(ForbiddenException.class,
+                () -> diaryService.deleteDiaryById(diaryResponseDto.getId(), "hacker")
+        );
+        assertThat(e.getMessage()).isEqualTo("작성자 본인만 접근할 수 있습니다.");
+        assertThat(e2.getMessage()).isEqualTo("작성자 본인만 접근할 수 있습니다.");
+    }
+
+    @Test
+    public void deleteMemberImages(){
+        MockMultipartFile secondFile = new MockMultipartFile(
+                "imageFile2",
+                "test_image2.jpg",
+                "image2/jpeg",
+                "두 번째 가짜 이미지 데이터입니다".getBytes()
+        );
+        DiaryRequestDto diaryRequestDto = new DiaryRequestDto("title", "MY content", "HAPPY", example);
+        DiaryRequestDto diaryRequestDto2 = new DiaryRequestDto("YES", "second diary", "SAD", secondFile);
+        DiaryResponseDto diaryResponseDto = diaryService.joinDiary(diaryRequestDto, "tester");
+        DiaryResponseDto diaryResponseDto2 = diaryService.joinDiary(diaryRequestDto2, "tester");
+        String imgPath=diaryResponseDto.getImgPath().replace("/images/","");
+        String imgPath2=diaryResponseDto2.getImgPath().replace("/images/","");
+        memberService.deleteMember("tester");
+        File file = new File(fileDir + imgPath);
+        File file2 = new File(fileDir + imgPath2);
+        assertThat(file.exists()).isFalse();
+        assertThat(file2.exists()).isFalse();
+        ResourceNotFoundException e =assertThrows(ResourceNotFoundException.class,
+                ()-> diaryService.findById(diaryResponseDto.getId()));
+        ResourceNotFoundException e2 =assertThrows(ResourceNotFoundException.class,
+                ()-> diaryService.findById(diaryResponseDto2.getId()));
+        assertThat(e.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto.getId());
+        assertThat(e2.getMessage()).isEqualTo("해당 일기가 존재하지 않습니다. id: " + diaryResponseDto2.getId());
+    }
+}
