@@ -11,6 +11,7 @@ import com.myDiary.demo.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 public class DiaryServiceTest {
     @Autowired // Spring Boot Test에서는 스프링이 아닌 JUNIT5가 관리하기 떄문에 @RequiredArgsConstructor 작동 안 함
