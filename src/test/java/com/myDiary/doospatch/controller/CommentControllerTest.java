@@ -9,6 +9,8 @@ import com.myDiary.doospatch.dto.CommentResponseDto;
 import com.myDiary.doospatch.entity.Comment;
 import com.myDiary.doospatch.entity.Diary;
 import com.myDiary.doospatch.entity.Member;
+import com.myDiary.doospatch.exception.GlobalExceptionHandler;
+import com.myDiary.doospatch.exception.ResourceNotFoundException;
 import com.myDiary.doospatch.service.CommentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +26,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -32,8 +37,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @WebMvcTest(CommentController.class)
-@Import(SecurityConfig.class)
+@Import({
+        SecurityConfig.class,
+        GlobalExceptionHandler.class
+})
 public class CommentControllerTest {
+    @Autowired
     @MockitoBean
     CommentService commentService;
     @Autowired
@@ -43,6 +52,7 @@ public class CommentControllerTest {
 
     private Member member;
     private Diary diary;
+
     @BeforeEach
     void setUp(){
         member = new Member("John",
@@ -59,6 +69,43 @@ public class CommentControllerTest {
                 .build();
         ReflectionTestUtils.setField(member,"id",1L);
         ReflectionTestUtils.setField(diary,"id",1L);
+    }
+    @Nested
+    @DisplayName("댓글 조회 API")
+    class getCommentsTest{
+        @Test
+        @DisplayName("성공 - 다이어리의 모든 댓글 조회 시 200 OK 반환")
+        void success()throws Exception{
+            Comment firstComment = new Comment("first comment", member, diary);
+            Comment secondComment = new Comment("second comment", member, diary);
+            ReflectionTestUtils.setField(firstComment,"id",1L);
+            ReflectionTestUtils.setField(secondComment,"id",2L);
+            CommentResponseDto firstCommentResponseDto = new CommentResponseDto(firstComment);
+            CommentResponseDto secondCommentResponseDto = new CommentResponseDto(secondComment);
+            List<CommentResponseDto> expectedList = new ArrayList<>();
+            expectedList.add(firstCommentResponseDto);
+            expectedList.add(secondCommentResponseDto);
+
+            given(commentService.findAllOnDiary(eq(1L))).willReturn(expectedList);
+            mockMvc.perform(get("/api/diaries/1/comments"))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].content").value("first comment"))
+                    .andExpect(jsonPath("$[1].content").value("second comment"))
+            ;
+        }
+        @Test
+        @DisplayName("실패 - 없는 다이어리의 댓글 조회하면 404 NOT_FOUND 반환")
+        void fail_noDiary() throws Exception {
+            ResourceNotFoundException expectedException =
+                    new ResourceNotFoundException("해당 일기가 존재하지 않습니다. id: -1");
+            given(commentService.findAllOnDiary(eq(-1L))).willThrow(expectedException);
+            mockMvc.perform(get("/api/diaries/-1/comments"))
+                    .andDo(print())
+                    .andExpect(status().isNotFound());
+            verify(commentService).findAllOnDiary(eq(-1L));
+        }
     }
 
     @Nested

@@ -1,5 +1,4 @@
 package com.myDiary.doospatch.controller;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.myDiary.doospatch.config.SecurityConfig;
 import com.myDiary.doospatch.dto.DiaryRequestDto;
 import com.myDiary.doospatch.dto.DiaryResponseDto;
@@ -71,8 +70,7 @@ public class DiaryControllerTest {
         expectedList.add(expectedResponseDto2);
 
         given(diaryService.findAll()).willReturn(expectedList);
-        mockMvc.perform(get("/api/diaries")
-                .with(csrf()))
+        mockMvc.perform(get("/api/diaries"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))

@@ -66,9 +66,10 @@ public class CommentService {
     }
 
     public List<CommentResponseDto> findAllOnDiary(Long diaryId){
-        List<Comment> commentList = commentRepository.findAllByDiaryId(diaryId);
-        return commentList.stream()
-                .map(comment->new CommentResponseDto(comment))
+        diaryService.findById(diaryId); // diary 존재하는지 확인
+        return commentRepository.findAllByDiaryIdOrderByIdAsc(diaryId)
+                .stream()
+                .map(CommentResponseDto::new)
                 .toList();
     }
     public Comment findById(Long id){
@@ -77,4 +78,5 @@ public class CommentService {
         );
         return comment;
     }
+
 }
