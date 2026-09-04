@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/diaries","/api/diaries/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/members").permitAll()
-                        .requestMatchers("/api/login","/login").permitAll()
+                        .requestMatchers("/api/login","/login", "/images/**").permitAll()
                         // 그 외의 주소(글 작성, 수정, 삭제)는 무조건 로그인(인증)을 해야만 접근 가능
                         .anyRequest().authenticated()
                 )
