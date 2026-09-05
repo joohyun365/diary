@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -27,8 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,60 +42,99 @@ public class MemberControllerTest {
     private ObjectMapper objectMapper; // 객체를 JSON으로, 반대로도 변환해주는 잭슨 라이브러리
     @MockitoBean
     private MemberService memberService;
-@Nested
-@DisplayName("회원 가입 API")
-class joinMember{
-    @Test
-    @DisplayName("성공 - 올바른 데이터를 보내면 201 Created와 생성된 유저 정보를 반환한다")
-    void join_success() throws Exception {
-        MemberRequestDto requestDto = new MemberRequestDto(
-                "name",
-                "testUsername",
-                "test@test.com",
-                "12345678",
-                "ROLE_USER");
-        Member member = Member.builder()
-                .name("name")
-                .username("testUsername")
-                .email("test@test.com")
-                .password("12345678")
-                .auth("ROLE_USER")
-                .build();
-        ReflectionTestUtils.setField(member, "id", 1L); // WebMVC는 가짜 환경이니 직접 id 넣어줌
-        MemberResponseDto expectedResponse = new MemberResponseDto(member); // 예상 응답
-        given(memberService.join(any(MemberRequestDto.class))).willReturn(expectedResponse);
-
-        // 실제 요청 및 검증
-        mockMvc.perform(post("/api/members")
-                        .with(csrf()) // 시큐리티가 켜져 있으면 POST 요청 시 CSRF 토큰이 필요함
-                        .contentType(MediaType.APPLICATION_JSON) // JSON 보낸다고 선언
-                        .content(objectMapper.writeValueAsString(requestDto))) // 객체를 JSON 스트링으로 변환해서 바디에 담음
-                .andDo(print()) // 콘솔에 요청/응답 전문을 이쁘게 출력해줌. 디버깅할 때 필수
-                .andExpect(status().isCreated()) // 상태코드 확인
-                .andExpect(jsonPath("$.username").value(expectedResponse.getUsername()))
-                .andExpect(jsonPath("$.name").value(expectedResponse.getName())) // 추가 검증
-                .andExpect(jsonPath("$.email").value(expectedResponse.getEmail())); // JSON 응답 객체의 특정 필드 검증
-        verify(memberService).join(any(MemberRequestDto.class));
+    @Nested
+    @DisplayName("본인 유저네임 조회")
+    class getCurrentMemberTest{
+        @Test
+        @DisplayName("성공 - 본인이 조회하면 200 OK 반환")
+        void success() throws Exception {
+            Member member = Member.builder()
+                    .name("myName")
+                    .username("tester")
+                    .email("t@t.com")
+                    .auth("USER_ROLE")
+                    .build();
+            ReflectionTestUtils.setField(member,"id",1L);
+            MemberResponseDto expectedResponseDto = new MemberResponseDto(member);
+            given(memberService.findUserByUsername(anyString())).willReturn(expectedResponseDto);
+            mockMvc.perform(get("/api/members/me")
+                            .with(user("tester").roles("USER")))
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username").value("tester"));
+        }
+        @Test
+        @DisplayName("실패 - 유저네임이 데이터에 없으면 404 NOT_FOUND 반환")
+        void fail() throws Exception {
+            String fakeUsername = "fake";
+            String errorMessage= "해당 유저를 찾을 수 없습니다. User: "+ fakeUsername;
+            ResourceNotFoundException expectedException =
+                    new ResourceNotFoundException(errorMessage);
+            given(memberService.findUserByUsername("fake")).willThrow(expectedException);
+//            doThrow(new ResourceNotFoundException(errorMessage)) // doThrow는 주로 void 메서드 mock할 때 씀.
+//                    .when(memberService).findUserByUsername(fakeUsername);
+            mockMvc.perform(get("/api/members/me").
+                            with(csrf())
+                            .with(user("fake").roles("USER")))
+                    .andDo(print())
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().string(errorMessage));
+        }
     }
+    @Nested
+    @DisplayName("회원 가입 API")
+    class joinMember{
+        @Test
+        @DisplayName("성공 - 올바른 데이터를 보내면 201 Created와 생성된 유저 정보를 반환한다")
+        void join_success() throws Exception {
+            MemberRequestDto requestDto = new MemberRequestDto(
+                    "name",
+                    "testUsername",
+                    "test@test.com",
+                    "12345678",
+                    "ROLE_USER");
+            Member member = Member.builder()
+                    .name("name")
+                    .username("testUsername")
+                    .email("test@test.com")
+                    .password("12345678")
+                    .auth("ROLE_USER")
+                    .build();
+            ReflectionTestUtils.setField(member, "id", 1L); // WebMVC는 가짜 환경이니 직접 id 넣어줌
+            MemberResponseDto expectedResponse = new MemberResponseDto(member); // 예상 응답
+            given(memberService.join(any(MemberRequestDto.class))).willReturn(expectedResponse);
 
-    @Test
-    @DisplayName("실패 - username 비워서 보내면 400 Bad Request 반환")
-    void join_fail() throws Exception {
-        MemberRequestDto requestDto = new MemberRequestDto(
-                "name",
-                "",
-                "test@test.com",
-                "12345678",
-                "ROLE_USER");
-        mockMvc.perform(post("/api/members")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-        verify(memberService, never()).join(requestDto);
+            // 실제 요청 및 검증
+            mockMvc.perform(post("/api/members")
+                            .with(csrf()) // 시큐리티가 켜져 있으면 POST 요청 시 CSRF 토큰이 필요함
+                            .contentType(MediaType.APPLICATION_JSON) // JSON 보낸다고 선언
+                            .content(objectMapper.writeValueAsString(requestDto))) // 객체를 JSON 스트링으로 변환해서 바디에 담음
+                    .andDo(print()) // 콘솔에 요청/응답 전문을 이쁘게 출력해줌. 디버깅할 때 필수
+                    .andExpect(status().isCreated()) // 상태코드 확인
+                    .andExpect(jsonPath("$.username").value(expectedResponse.getUsername()))
+                    .andExpect(jsonPath("$.name").value(expectedResponse.getName())) // 추가 검증
+                    .andExpect(jsonPath("$.email").value(expectedResponse.getEmail())); // JSON 응답 객체의 특정 필드 검증
+            verify(memberService).join(any(MemberRequestDto.class));
+        }
+
+        @Test
+        @DisplayName("실패 - username 비워서 보내면 400 Bad Request 반환")
+        void join_fail() throws Exception {
+            MemberRequestDto requestDto = new MemberRequestDto(
+                    "name",
+                    "",
+                    "test@test.com",
+                    "12345678",
+                    "ROLE_USER");
+            mockMvc.perform(post("/api/members")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDto)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest());
+            verify(memberService, never()).join(requestDto);
+        }
     }
-}
 
     @Nested // 보기 좋게 묶어서 봄
     @DisplayName("회원 탈퇴 API")

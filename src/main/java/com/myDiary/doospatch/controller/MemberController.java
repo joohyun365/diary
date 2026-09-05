@@ -19,6 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
     private final MemberService memberService;
 
+    @GetMapping("/me")
+    public ResponseEntity<MemberResponseDto> getCurrentMember(@AuthenticationPrincipal UserDetails userDetails){
+        return ResponseEntity.ok(
+                memberService.findUserByUsername(userDetails.getUsername()));
+    }
     @PostMapping
     public ResponseEntity<MemberResponseDto> create(@Valid @RequestBody MemberRequestDto memberRequestDto) {
 

@@ -24,8 +24,7 @@ public class CommentController {
 
     @GetMapping
     public ResponseEntity<List<CommentResponseDto>> getComments(@PathVariable("diaryId") Long diaryId){
-        return ResponseEntity.ok()
-                .body(commentService.findAllOnDiary(diaryId));
+        return ResponseEntity.ok(commentService.findAllOnDiary(diaryId));
     }
     @PostMapping
     public ResponseEntity<CommentResponseDto> addComment(@PathVariable("diaryId") Long diaryId, @Valid @RequestBody CommentRequestDto commentRequestDto, @AuthenticationPrincipal UserDetails userDetails){

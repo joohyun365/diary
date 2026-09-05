@@ -3,6 +3,7 @@ package com.myDiary.doospatch.service;
 import com.myDiary.doospatch.dto.MemberRequestDto;
 import com.myDiary.doospatch.dto.MemberResponseDto;
 import com.myDiary.doospatch.entity.Member;
+import com.myDiary.doospatch.exception.ForbiddenException;
 import com.myDiary.doospatch.exception.ResourceNotFoundException;
 import com.myDiary.doospatch.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,14 @@ public class MemberService implements UserDetailsService {
         );
         diaryService.deleteAllImageFilesByMember(member);
         memberRepository.deleteByUsername(username);
+    }
+
+    @Transactional(readOnly = true)
+    public MemberResponseDto findUserByUsername(String username) {
+        Member member = memberRepository.findByUsername(username).orElseThrow(
+                () -> new ResourceNotFoundException("해당 유저를 찾을 수 없습니다. User: " + username)
+        );
+        return new MemberResponseDto(member);
     }
 
     @Override

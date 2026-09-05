@@ -2,6 +2,10 @@ package com.myDiary.doospatch.service;
 
 import com.myDiary.doospatch.dto.MemberRequestDto;
 import com.myDiary.doospatch.dto.MemberResponseDto;
+import com.myDiary.doospatch.entity.Member;
+import com.myDiary.doospatch.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,6 +45,26 @@ public class MemberServiceTest {
             () -> assertThat(details.getAuthorities().iterator().next().getAuthority())
                     .isEqualTo(memberRequestDto.getAuth())
         );
+    }
+    @Nested
+    @DisplayName("본인 유저네임 조회")
+    class findUserByUsername{
+        @Test
+        @DisplayName("성공 - MemberResponseDto 반환")
+        void success(){
+            MemberRequestDto memberRequestDto = new MemberRequestDto("myName", "tester", "email@n.com", "12345678", "USER_ROLE");
+            MemberResponseDto memberResponseDto = memberService.join(memberRequestDto);
+            MemberResponseDto foundMemberResponseDto = memberService.findUserByUsername("tester");
+            assertThat(foundMemberResponseDto.getUsername()).isEqualTo("tester");
+        }
+        @Test
+        @DisplayName("실패 - MemberResponseDto 반환")
+        void fail(){
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                    () -> memberService.findUserByUsername("fake"));
+            assertThat(exception.getMessage())
+                    .isEqualTo("해당 유저를 찾을 수 없습니다. User: fake");
+        }
     }
     @Test
     public void deleteUserTest(){
